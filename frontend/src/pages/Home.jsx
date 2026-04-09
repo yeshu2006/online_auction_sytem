@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import useAuctionStore from '../store/auctionStore';
 import AuctionCard from '../components/AuctionCard';
+import { API_BASE_URL } from '../config';
 
 const Home = () => {
   const { auctions, setAuctions } = useAuctionStore();
@@ -11,7 +12,7 @@ const Home = () => {
   useEffect(() => {
     const fetchAuctions = async () => {
       try {
-        const { data } = await axios.get('http://localhost:5000/api/auctions');
+        const { data } = await axios.get(`${API_BASE_URL}/api/auctions`);
         setAuctions(data);
       } catch (error) {
         console.error('Error fetching auctions', error);

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import useAuthStore from '../store/authStore';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import { API_BASE_URL } from '../config';
 
 const Dashboard = () => {
   const { user } = useAuthStore();
@@ -12,7 +13,7 @@ const Dashboard = () => {
     e.preventDefault();
     try {
       const config = { headers: { Authorization: `Bearer ${useAuthStore.getState().token}` }};
-      await axios.post('http://localhost:5000/api/auctions', formData, config);
+      await axios.post(`${API_BASE_URL}/api/auctions`, formData, config);
       setMessage('Auction created successfully!');
       setFormData({ title: '', description: '', startingBid: '', durationHours: '', imageUrl: '' });
     } catch (err) {

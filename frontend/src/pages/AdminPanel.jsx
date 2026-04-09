@@ -3,6 +3,7 @@ import axios from 'axios';
 import useAuthStore from '../store/authStore';
 import useAuctionStore from '../store/auctionStore';
 import { motion } from 'framer-motion';
+import { API_BASE_URL } from '../config';
 
 const AdminPanel = () => {
   const { user, token } = useAuthStore();
@@ -16,8 +17,8 @@ const AdminPanel = () => {
       try {
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const [usersRes, auctionsRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/admin/users', config),
-          axios.get('http://localhost:5000/api/auctions')
+          axios.get(`${API_BASE_URL}/api/admin/users`, config),
+          axios.get(`${API_BASE_URL}/api/auctions`)
         ]);
         setUsers(usersRes.data);
         setAuctions(auctionsRes.data);
@@ -31,7 +32,7 @@ const AdminPanel = () => {
   const handleDeleteAuction = async (id) => {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.delete(`http://localhost:5000/api/admin/auction/${id}`, config);
+      await axios.delete(`${API_BASE_URL}/api/admin/auction/${id}`, config);
       setAuctions(auctions.filter(a => a._id !== id));
     } catch (err) {
       console.error('Failed to delete auction', err);

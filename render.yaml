@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: auction-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: MONGO_URI
+        value: mongodb+srv://yeshwanth3006:yeshu2006@cluster1.m4whaca.mongodb.net/?appName=CLUSTER1
+      - key: JWT_SECRET
+        value: k3QhOzpRnU0rtN02VCUMNLj3NuMLPH0hnoJcPlXYXE2
+
+  - type: web
+    name: auction-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: auction-backend
+          property: host
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

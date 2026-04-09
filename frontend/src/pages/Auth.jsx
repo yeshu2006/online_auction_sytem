@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
 import { motion } from 'framer-motion';
+import { API_BASE_URL } from '../config';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
@@ -14,7 +15,7 @@ export const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+      const { data } = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
       login(data, data.token);
       navigate('/dashboard');
     } catch (err) {
@@ -62,7 +63,7 @@ export const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await axios.post('http://localhost:5000/api/auth/register', { name, email, password });
+      const { data } = await axios.post(`${API_BASE_URL}/api/auth/register`, { name, email, password });
       login(data, data.token);
       navigate('/dashboard');
     } catch (err) {

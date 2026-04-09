@@ -5,8 +5,9 @@ import { io } from 'socket.io-client';
 import useAuctionStore from '../store/auctionStore';
 import useAuthStore from '../store/authStore';
 import { motion } from 'framer-motion';
+import { API_BASE_URL } from '../config';
 
-const socket = io('http://localhost:5000');
+const socket = io(API_BASE_URL);
 
 const AuctionDetails = () => {
   const { id } = useParams();
@@ -20,8 +21,8 @@ const AuctionDetails = () => {
     const fetchAuctionData = async () => {
       try {
         const [auctionRes, bidsRes] = await Promise.all([
-          axios.get(`http://localhost:5000/api/auctions/${id}`),
-          axios.get(`http://localhost:5000/api/bids/auction/${id}`)
+          axios.get(`${API_BASE_URL}/api/auctions/${id}`),
+          axios.get(`${API_BASE_URL}/api/bids/auction/${id}`)
         ]);
         setCurrentAuction(auctionRes.data);
         setBids(bidsRes.data);
