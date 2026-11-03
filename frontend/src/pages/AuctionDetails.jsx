@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Clock3, Gavel, Radio, Wifi, WifiOff } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
@@ -24,7 +24,12 @@ const AuctionDetails = () => {
   const { setCurrentAuction, updateBid } = useAuctionStore();
   const socket = useMemo(() => io(API_BASE_URL, {
     autoConnect: false,
-    auth: token ? { token } : {}
+    auth: token ? { token } : {},
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 20000
   }), [token]);
   const [auction, setAuction] = useState(null);
   const [bids, setBids] = useState([]);
@@ -36,7 +41,6 @@ const AuctionDetails = () => {
   const [pending, setPending] = useState(false);
   const [clock, setClock] = useState(0);
   const [connected, setConnected] = useState(false);
-  const pendingTimer = useRef(null);
 
   const fetchAuctionData = useCallback(async () => {
     const [auctionResponse, bidsResponse] = await Promise.all([
@@ -45,11 +49,14 @@ const AuctionDetails = () => {
     ]);
     setAuction(auctionResponse.data);
     setCurrentAuction(auctionResponse.data);
-    setBids(Array.isArray(bidsResponse.data) ? bidsResponse.data : []);
+    const bids = Array.isArray(bidsResponse.data) ? bidsResponse.data : [];
+    setBids(bids);
+    return { auction: auctionResponse.data, bids };
   }, [id, setCurrentAuction]);
 
   useEffect(() => {
     let active = true;
+    let joinRetryTimer;
     Promise.all([
       axios.get(`${API_BASE_URL}/api/auctions/${id}`),
       axios.get(`${API_BASE_URL}/api/bids/auction/${id}?limit=100`)
@@ -87,21 +94,26 @@ const AuctionDetails = () => {
       setBids(previous => previous.some(bid => bid._id === newBid._id)
         ? previous
         : [newBid, ...previous]);
-      if (pendingTimer.current) clearTimeout(pendingTimer.current);
-      setPending(false);
       setIsError(false);
       setMessage(String(newBid.user?._id || newBid.user) === String(user?._id)
         ? 'Your bid is now the leading bid.'
         : 'A new bid has been placed.');
     };
 
-    const joinRoom = () => {
-      setConnected(true);
-      socket.emit('join_auction', id, response => {
-        if (!response?.ok && active) {
+    function joinRoom() {
+      if (joinRetryTimer) window.clearTimeout(joinRetryTimer);
+      const connectionId = socket.id;
+      socket.timeout(10000).emit('join_auction', id, (error, response) => {
+        if (!active || socket.id !== connectionId) return;
+        if (error || !response?.ok) {
+          setConnected(false);
           setIsError(true);
-          setMessage(response?.message || 'Unable to join this auction room.');
-        } else if (active) {
+          setMessage(response?.message || 'Unable to join this auction room. Retrying…');
+          joinRetryTimer = window.setTimeout(() => {
+            if (active && socket.connected) joinRoom();
+          }, 3000);
+        } else if (socket.connected) {
+          setConnected(true);
           setIsError(false);
           setMessage('Live connection restored. Auction state is up to date.');
           fetchAuctionData().catch(() => {
@@ -110,8 +122,11 @@ const AuctionDetails = () => {
           });
         }
       });
+    }
+    const handleDisconnect = () => {
+      setConnected(false);
+      if (joinRetryTimer) window.clearTimeout(joinRetryTimer);
     };
-    const handleDisconnect = () => setConnected(false);
     const handleConnectError = () => {
       setConnected(false);
       setIsError(true);
@@ -158,7 +173,7 @@ const AuctionDetails = () => {
       socket.off('auction_removed', handleAuctionRemoved);
       socket.off('auction_closed', handleAuctionClosed);
       socket.disconnect();
-      if (pendingTimer.current) clearTimeout(pendingTimer.current);
+      if (joinRetryTimer) window.clearTimeout(joinRetryTimer);
     };
   }, [fetchAuctionData, id, setCurrentAuction, socket, updateBid, user?._id]);
 
@@ -177,11 +192,11 @@ const AuctionDetails = () => {
   const isLive = useMemo(() => auction?.status === 'active' && new Date(auction.endTime).getTime() > clock, [auction, clock]);
   const isSeller = String(auction?.seller?._id || auction?.seller) === String(user?._id);
 
-  const handlePlaceBid = event => {
+  const handlePlaceBid = async event => {
     event.preventDefault();
     setMessage('');
     const amount = Number(bidAmount);
-    if (!user) {
+    if (!user || !token) {
       setIsError(true);
       setMessage('Sign in to take part in the bidding.');
       return;
@@ -201,38 +216,52 @@ const AuctionDetails = () => {
       setMessage(`Your bid must be greater than $${Number(auction.currentBid).toLocaleString()}.`);
       return;
     }
-    if (!socket.connected) {
-      setIsError(true);
-      setMessage('The live auction room is reconnecting. Please try again in a moment.');
-      return;
-    }
-
     setIsError(false);
     setPending(true);
-    setMessage('Bid submitted. Waiting for the room to confirm it…');
-    socket.emit('place_bid', { auctionId: id, amount }, response => {
-      if (pendingTimer.current) clearTimeout(pendingTimer.current);
-      setPending(false);
-      if (!response?.ok) {
-        setIsError(true);
-        setMessage(response?.message || 'Your bid was not accepted. Refresh the auction and try again.');
-        return;
+    setMessage(connected ? 'Submitting your bid…' : 'Submitting your bid. Live updates will resume when the room reconnects…');
+    try {
+      const { data } = await axios.post(`${API_BASE_URL}/api/bids`, {
+        auctionId: id,
+        amount
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 15000
+      });
+      setAuction(data.auction);
+      setCurrentAuction(data.auction);
+      if (data.newBid) {
+        setBids(previous => previous.some(bid => bid._id === data.newBid._id)
+          ? previous
+          : [data.newBid, ...previous]);
       }
       setIsError(false);
       setMessage('Your bid was accepted.');
       setBidAmount('');
-    });
-    pendingTimer.current = window.setTimeout(async () => {
-      setPending(false);
-      setIsError(true);
-      setMessage('We did not receive confirmation. Refreshing this lot to check its latest state.');
-      try {
-        await fetchAuctionData();
-        setMessage('The lot has been refreshed. Please check the current bid before trying again.');
-      } catch {
-        setMessage('We could not confirm your bid or refresh the lot. Please try again.');
+    } catch (error) {
+      const serverMessage = error.response?.data?.message;
+      if (serverMessage) {
+        setIsError(true);
+        setMessage(serverMessage);
+      } else {
+        try {
+          const latest = await fetchAuctionData();
+          const bidWasAccepted = latest.bids.some(bid =>
+            String(bid.user?._id || bid.user) === String(user._id) &&
+            Number(bid.amount) === amount
+          );
+          setIsError(!bidWasAccepted);
+          setMessage(bidWasAccepted
+            ? 'Your bid was accepted. The latest auction state has been restored.'
+            : 'We could not confirm whether your bid was accepted. Check the current bid and history before trying again.');
+          if (bidWasAccepted) setBidAmount('');
+        } catch {
+          setIsError(true);
+          setMessage('We could not confirm your bid because the server is unavailable. Refresh the lot before trying again.');
+        }
       }
-    }, 7000);
+    } finally {
+      setPending(false);
+    }
   };
 
   if (loading || loadedId !== id || !clock) return <div className="loading-state" role="status">Opening the lot…</div>;

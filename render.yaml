@@ -5,11 +5,12 @@ services:
     rootDir: backend
     buildCommand: npm install
     startCommand: npm start
+    healthCheckPath: /health
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: MONGO_URI
         sync: false
-      - key: CLIENT_URL
-        value: https://auction-frontend.onrender.com
       - key: JWT_SECRET
         sync: false
 
@@ -21,10 +22,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: auction-backend
-          property: host
+        value: https://online-auction-sytem-mvb2.vercel.app
     routes:
       - type: rewrite
         source: /*

@@ -31,7 +31,6 @@ The interface uses a white, black, and orange palette. Prices and the profile ba
    MONGO_URI=mongodb://127.0.0.1:27017/auction_system
    PORT=5000
    JWT_SECRET=replace-with-a-long-random-secret
-   CLIENT_URL=http://localhost:5173
    ```
 
 3. In `backend`, install dependencies and start the API:
@@ -106,7 +105,7 @@ Protected HTTP routes use `Authorization: Bearer <token>`. Socket.IO accepts a J
 
 ## Deploy
 
-The Render blueprint is in `render.yaml`. Set `MONGO_URI` and `JWT_SECRET` in the backend service environment; the blueprint deliberately leaves the JWT secret unsynced so no deployment secret is committed in source. Use a fresh strong secret and rotate any secret that has previously been exposed. Set the deployed frontend origin in `CLIENT_URL`.
+The Render blueprint is in `render.yaml`. Set `MONGO_URI` and `JWT_SECRET` in the backend service environment; the blueprint deliberately leaves the JWT secret unsynced so no deployment secret is committed in source. Use a fresh strong secret and rotate any secret that has previously been exposed. HTTP and Socket.IO CORS allow browser requests from any origin, without credentialed cookies; protected endpoints still require bearer-token authentication.
 
 The production MongoDB URI must point to a replica set. Do not use the single-process development fallback for multi-instance deployment. Configure MongoDB network access and a least-privilege database user for the backend.
 

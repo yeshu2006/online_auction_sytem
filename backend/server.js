@@ -15,38 +15,22 @@ if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET must be configured before starting the backend');
 }
 
-const clientOrigins = (process.env.CLIENT_URL || '')
-  .split(',')
-  .map(origin => origin.trim())
-  .filter(Boolean)
-  .map(origin => new URL(origin.includes('://') ? origin : `https://${origin}`).origin);
-const allowedOrigins = new Set(clientOrigins);
-const isAllowedOrigin = (origin) => {
-  if (!origin) return true;
-  if (allowedOrigins.has(origin)) return true;
-
-  try {
-    const url = new URL(origin);
-    return url.protocol === 'http:' &&
-      ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
-  } catch {
-    return false;
-  }
+const corsOptions = {
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Authorization', 'Content-Type'],
+  exposedHeaders: ['X-Total-Count']
 };
-const checkOrigin = (origin, callback) => callback(null, isAllowedOrigin(origin));
 
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: {
-    origin: checkOrigin,
-    methods: ['GET', 'POST']
-  }
+  cors: corsOptions
 });
 
-app.use(cors({ origin: checkOrigin, exposedHeaders: ['X-Total-Count'] }));
+app.use(cors(corsOptions));
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -65,8 +49,6 @@ app.get('/health', (req, res) => {
   const ready = mongoose.connection.readyState === 1;
   return res.status(ready ? 200 : 503).json({ status: ready ? 'ok' : 'unavailable' });
 });
-
-// Routes
 const authRoutes = require('./routes/authRoutes');
 const auctionRoutes = require('./routes/auctionRoutes');
 const bidRoutes = require('./routes/bidRoutes');
