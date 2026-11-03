@@ -7,9 +7,11 @@ services:
     startCommand: npm start
     envVars:
       - key: MONGO_URI
-        value: mongodb+srv://yeshwanth3006:yeshu2006@cluster1.m4whaca.mongodb.net/?appName=CLUSTER1
+        sync: false
+      - key: CLIENT_URL
+        value: https://auction-frontend.onrender.com
       - key: JWT_SECRET
-        value: k3QhOzpRnU0rtN02VCUMNLj3NuMLPH0hnoJcPlXYXE2
+        sync: false
 
   - type: web
     name: auction-frontend

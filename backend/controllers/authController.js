@@ -3,14 +3,20 @@ const jwt = require('jsonwebtoken');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
+    expiresIn: '7d',
   });
 };
 
 exports.registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-    
+    const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
+    const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    const password = typeof req.body.password === 'string' ? req.body.password : '';
+
+    if (!name || name.length > 80 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8 || password.length > 128) {
+      return res.status(400).json({ message: 'Enter a name, valid email, and password between 8 and 128 characters.' });
+    }
+
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ message: 'User already exists' });
@@ -32,14 +38,18 @@ exports.registerUser = async (req, res) => {
       token: generateToken(user._id),
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: 'An account with this email already exists' });
+    }
     console.error('Registration Error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Unable to register account' });
   }
 };
 
 exports.authUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    const password = typeof req.body.password === 'string' ? req.body.password : '';
 
     const user = await User.findOne({ email });
 
@@ -58,7 +68,7 @@ exports.authUser = async (req, res) => {
     }
   } catch (error) {
     console.error('Login Error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Unable to sign in' });
   }
 };
 
@@ -72,6 +82,6 @@ exports.getUserProfile = async (req, res) => {
     }
   } catch (error) {
     console.error('Profile Error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Unable to retrieve profile' });
   }
 };

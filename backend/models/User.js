@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   avatar: { type: String, default: '' },
-  balance: { type: Number, default: 10000 } // Demo fake balance for realistic bidding
+  balance: { type: Number, default: 10000 },
+  watchlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Auction' }]
 }, { timestamps: true });
 
 userSchema.pre('save', async function() {

@@ -1,16 +1,25 @@
-# React + Vite
+# BidAura — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19, Vite, React Router, Zustand, Axios, and Socket.IO client application for the online auction system.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```sh
+npm install
+npm run dev
+```
 
-## React Compiler
+By default, the frontend connects to `http://localhost:5000`. Set `VITE_API_URL` to the backend origin when it is hosted elsewhere.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Main pages
 
-## Expanding the ESLint configuration
+- `/` — searchable catalogue loaded from the MongoDB-backed API, plus persistent signed-in watchlists.
+- `/login` and `/register` — account access.
+- `/auction/:id` — live lot, countdown, price graph, bid history, and socket bidding.
+- `/dashboard` — your listings, recent bid activity, and auction creation.
+- `/bids` — paginated bid history and current leading/winning state.
+- `/profile` — profile, recent bids, and your listed pieces.
+- `/admin` — administrator account and lot controls.
+- `/help`, `/privacy`, and `/terms` — marketplace information and auction rules.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Run `npm run lint` and `npm run build` before deploying.

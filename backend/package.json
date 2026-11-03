@@ -4,9 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test",
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "seed:marketplace": "node scripts/seed-marketplace.js",
+    "smoke:production": "node scripts/production-smoke.js"
   },
   "keywords": [],
   "author": "",

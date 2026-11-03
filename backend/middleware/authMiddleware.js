@@ -1,21 +1,25 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+const verifyToken = async (token) => {
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  if (!decoded.id) return null;
+  return User.findById(decoded.id).select('-password');
+};
+
 const protect = async (req, res, next) => {
-  let token;
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = await User.findById(decoded.id).select('-password');
-      next();
-    } catch (error) {
-      res.status(401).json({ message: 'Not authorized, token failed' });
-    }
+  const authorization = req.headers.authorization || '';
+  const [scheme, token] = authorization.split(' ');
+  if (scheme !== 'Bearer' || !token) {
+    return res.status(401).json({ message: 'Authentication required' });
   }
 
-  if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+  try {
+    req.user = await verifyToken(token);
+    if (!req.user) return res.status(401).json({ message: 'Account no longer exists' });
+    return next();
+  } catch {
+    return res.status(401).json({ message: 'Invalid or expired authentication token' });
   }
 };
 
@@ -27,4 +31,4 @@ const admin = (req, res, next) => {
   }
 };
 
-module.exports = { protect, admin };
+module.exports = { protect, admin, verifyToken };

@@ -1,44 +1,74 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { ArrowUpRight, Gavel, Heart, Menu, X } from 'lucide-react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 
 const Navbar = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
+  const closeMenu = () => setMenuOpen(false);
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    closeMenu();
+    navigate('/');
   };
+  const navClass = ({ isActive }) => `nav-link${isActive ? ' active' : ''}`;
 
   return (
-    <nav className="clean-panel" style={{ margin: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Link to="/" style={{ textDecoration: 'none', color: 'var(--primary-color)', fontSize: '1.5rem', fontWeight: 'bold' }}>
-        Online Auction System
-      </Link>
-      
-      <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-        <Link to="/" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 500 }}>Home</Link>
-        {user ? (
-          <>
-            <Link to="/dashboard" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 500 }}>Dashboard</Link>
-            {user.role === 'admin' && (
-              <Link to="/admin" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 500 }}>Admin Panel</Link>
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-base)', border: '1px solid var(--border-light)', padding: '0.25rem 0.75rem', borderRadius: '1rem' }}>
-              <img src={user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=fallback'} alt="Avatar" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
-              <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{user.name}</span>
-            </div>
-            <button onClick={handleLogout} className="btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>Logout</button>
-          </>
-        ) : (
-          <>
-            <Link to="/login" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 500 }}>Login</Link>
-            <Link to="/register" className="btn-primary" style={{ textDecoration: 'none' }}>Get Started</Link>
-          </>
-        )}
-      </div>
-    </nav>
+    <header className="site-header">
+      <nav className="nav-inner" aria-label="Main navigation">
+        <Link className="brand" to="/" onClick={closeMenu} aria-label="BidAura home">
+          <span className="brand-mark"><Gavel size={19} strokeWidth={1.7} /></span>
+          <span className="brand-copy">
+            <span className="brand-name">bid<span>aura</span></span>
+            <span className="brand-subtitle">THE ART OF THE FIND</span>
+          </span>
+        </Link>
+
+        <div className={`nav-links${menuOpen ? ' is-open' : ''}`}>
+          <NavLink className={navClass} to="/" end onClick={closeMenu}>Discover</NavLink>
+          <Link className="nav-link" to="/#explore" onClick={closeMenu}>Auctions <span className="nav-live-indicator" /></Link>
+          <Link className="nav-link" to="/#categories" onClick={closeMenu}>Categories</Link>
+          <Link className="nav-link" to={user ? '/dashboard' : '/register'} onClick={closeMenu}>Sell an item</Link>
+          {user && <NavLink className={navClass} to="/dashboard" onClick={closeMenu}>My collection</NavLink>}
+          {user?.role === 'admin' && <NavLink className={navClass} to="/admin" onClick={closeMenu}>Admin</NavLink>}
+          {!user && <NavLink className={navClass} to="/login" onClick={closeMenu}>Sign in</NavLink>}
+        </div>
+
+        <div className="nav-actions">
+          <Link className="nav-watchlist" to={user ? '/dashboard' : '/login'} aria-label="Your watchlist" onClick={closeMenu}><Heart size={17} /></Link>
+          {user ? (
+            <>
+              <Link className="nav-user" to="/profile" onClick={closeMenu} aria-label={`View profile for ${user.name}`}>
+                <span className="avatar-small">{user.avatar
+                  ? <img src={user.avatar} alt="" />
+                  : (user.name?.trim()?.[0] || 'M').toUpperCase()}
+                </span>
+                <span>{user.name?.split(' ')[0]}</span>
+              </Link>
+              <button className="nav-logout" type="button" onClick={handleLogout}>Sign out</button>
+            </>
+          ) : (
+            <Link className="nav-join" to="/register">
+              <span className="nav-join-full">Start collecting</span>
+              <span className="nav-join-short">Join</span>
+              <ArrowUpRight size={14} />
+            </Link>
+          )}
+          <button
+            className="menu-toggle"
+            type="button"
+            aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(open => !open)}
+          >
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+      </nav>
+    </header>
   );
 };
 

@@ -5,7 +5,9 @@ const useAuctionStore = create((set) => ({
   currentAuction: null,
   
   setAuctions: (auctions) => set({ auctions }),
-  setCurrentAuction: (auction) => set({ currentAuction: auction }),
+  setCurrentAuction: (auction) => set((state) => ({
+    currentAuction: typeof auction === 'function' ? auction(state.currentAuction) : auction
+  })),
   updateBid: (auctionId, newBidValue, newBidder) => 
     set((state) => ({
       currentAuction: state.currentAuction?._id === auctionId 
