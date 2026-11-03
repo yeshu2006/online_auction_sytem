@@ -24,6 +24,7 @@ const AuctionDetails = () => {
   const { setCurrentAuction, updateBid } = useAuctionStore();
   const socket = useMemo(() => io(API_BASE_URL, {
     autoConnect: false,
+    transports: ['websocket'],
     auth: token ? { token } : {},
     reconnection: true,
     reconnectionAttempts: Infinity,

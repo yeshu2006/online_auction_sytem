@@ -11,7 +11,7 @@ npm run dev
 
 In development, the frontend connects to `http://localhost:5000`. Production builds default to `https://online-auction-sytem-mvb2.vercel.app`; set `VITE_API_URL` to override it, then rebuild/redeploy the frontend.
 
-The auction page uses Socket.IO for live bid updates and reconnects automatically. Bid submission uses the authenticated `/api/bids` endpoint, so a temporary socket reconnect does not prevent bidding; accepted bids are broadcast to joined auction rooms. The backend allows cross-origin HTTP and Socket.IO requests without credentialed cookies.
+The auction page uses Socket.IO over WebSocket for live bid updates and reconnects automatically. WebSocket transport avoids Engine.IO polling session errors on the Vercel backend. Bid submission uses the authenticated `/api/bids` endpoint, so a temporary socket reconnect does not prevent bidding; accepted bids are broadcast to joined auction rooms. The backend allows cross-origin HTTP and Socket.IO requests without credentialed cookies.
 
 ## Main pages
 
